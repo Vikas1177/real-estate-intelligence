@@ -1,5 +1,6 @@
 import requests
 import json
+import math
 
 API_URL = "http://localhost:8000/search"
 
@@ -36,7 +37,6 @@ TEST_SET = [
     ("Which page lists awards such as 'Emerging Developer of the year - ET Real Estate Awards'?", 45),
     ("Which section explains the role of art at Max Estates?", 35),
     ("Where is Max Estates' corporate office listed in disclaimers?", 48),
-
 ]
 
 def evaluate():
@@ -44,7 +44,7 @@ def evaluate():
     
     top_1_correct = 0
     top_3_correct = 0
-    total_latency = 0
+    all_latencies = []
 
     for query, expected_page in TEST_SET:
         try:
@@ -53,7 +53,7 @@ def evaluate():
             
             results = data.get("results", [])
             latency = data.get("latency_ms", 0)
-            total_latency += latency
+            all_latencies.append(latency)
             
             print("-" * 50)
             print(f"QUERY: '{query}'")
@@ -83,12 +83,18 @@ def evaluate():
         except Exception as e:
             print(f"Error testing query '{query}': {e}")
 
-    # Final Metrics
     if len(TEST_SET) > 0:
-        avg_latency = total_latency / len(TEST_SET)
+        avg_latency = sum(all_latencies) / len(all_latencies) if all_latencies else 0
+        p95_latency = 0
+        if all_latencies:
+            sorted_latencies = sorted(all_latencies)
+            idx = int(math.ceil((len(sorted_latencies) * 95) / 100)) - 1
+            p95_latency = sorted_latencies[max(0, idx)]
+
         print("\n")
         print("FINAL SUCCESS METRICS")
         print(f"Average Query Latency: {avg_latency:.2f} ms")
+        print(f"P95 Latency:           {p95_latency:.2f} ms")
         print(f"Top-1 Accuracy:        {(top_1_correct/len(TEST_SET))*100:.1f}%")
         print(f"Top-3 Accuracy:        {(top_3_correct/len(TEST_SET))*100:.1f}%")
 
