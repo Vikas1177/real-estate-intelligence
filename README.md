@@ -88,9 +88,14 @@ You can send POST requests to the `/search` endpoint to get answers.
 **Example using `curl`:**
 
 ```bash
-curl -X POST "http://localhost:8000/search" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "What LEED certification does Max Towers have?", "k": 3}'
+curl -X 'POST' \
+  'http://127.0.0.1:8000/search' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "query": "When was Max Estates established?",
+  "k": 3
+}'
 ```
 
 **Example Response:**
@@ -99,14 +104,25 @@ curl -X POST "http://localhost:8000/search" \
 {
   "results": [
     {
-      "score": 9.87321,
-      "text": "Max Towers is an IGBC Platinum Certified building under the Health and Well-being rating system... It is a LEED Platinum certified development.",
-      "pdf_name": "Max-Estates-Brochure.pdf",
-      "page": 11
+      "score": 7.587080001831055,
+      "text": "Max Estates Limited is the Real Estate arm of Max Group. Established in 2016, Max Estates aspires to build sustainable, grade A developments in Delhi-NCR, with a focus on well-being. Every day, our en...",
+      "pdf_name": "Max-Estates-Corporate-Brochure.pdf",
+      "page": 4
     },
-    ...
+    {
+      "score": 6.14046573638916,
+      "text": "ESTABLISH (2018-2021) Formalising our real estate strategy Formalized real estate strategy to one region, multiple asset class focus on Delhi-NCR as a region and Commercial Real Estate as the asset cl...",
+      "pdf_name": "Max-Estates-Corporate-Brochure.pdf",
+      "page": 6
+    },
+    {
+      "score": 1.840876579284668,
+      "text": "DISCLAIMERS Max Estates Ltd. (CIN no. U70200PB2016PLC040200) is having its Corporate office at Max Towers, L-15, C - 001/A/1, Sector- 16B, Noida, Gautam Buddha Nagar, Noida UP 201301 & Registered offi...",
+      "pdf_name": "Max-Estates-Corporate-Brochure.pdf",
+      "page": 48
+    }
   ],
-  "latency_ms": 150.75
+  "latency_ms": 1555.04
 }
 ```
 
@@ -121,25 +137,13 @@ The repository includes a script to evaluate the system's performance on a prede
 python evaluate.py
 ```
 
-The script will query the API for each question in its test set and print the retrieved results, latency, and final accuracy metrics.
-
-**Example Output:**
+**FINAL SUCCESS METRICS**
 
 ```
---------------------------------------------------
-QUERY: 'What LEED certification does Max Towers have?'
-EXPECTED PAGE: 11
-LATENCY: 145.31 ms
-
-RETRIEVED RESULTS:
-  1. [Page 11] (Score: 9.8732) [CORRECT]
-     Text: Max Towers is an IGBC Platinum Certified building under the Health and Well-being rating system... It is a LEED Platinum certified development.
-...
-
-FINAL SUCCESS METRICS
-Average Query Latency: 152.41 ms
-Top-1 Accuracy:        90.6%
-Top-3 Accuracy:        96.9%
+Average Query Latency: 1002.25 ms
+P95 Latency:           1506.51 ms
+Top-1 Accuracy:        84.4%
+Top-3 Accuracy:        90.6%
 ```
 
 ## Docker
