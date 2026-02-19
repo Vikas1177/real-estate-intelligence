@@ -95,7 +95,7 @@ curl -X 'POST' \
   -d '{
   "query": "When was Max Estates established?",
   "k": 3
-}'
+}
 ```
 
 **Example Response:**
