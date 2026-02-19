@@ -1,7 +1,5 @@
 # Real Estate Intelligence Q&A
 
-[![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/Vikas1177/real-estate-intelligence)
-
 This repository provides a high-performance, two-stage semantic search system designed to answer questions from a corpus of real estate documents in PDF format. It uses state-of-the-art embedding and cross-encoder models to deliver accurate results with low latency.
 
 The system features an ingestion pipeline to process and index PDF documents and a FastAPI-based query service for real-time searching.
