@@ -67,3 +67,29 @@ To build with scalability and latency awareness, it is critical to understand th
 * **Advanced: pre-tokenize chunks**
     * For large rerank budgets, prestore tokenized chunk tensors to avoid tokenization CPU bottleneck at query time.
 ---
+## 5. Caching Strategy (Query-Time Optimization)
+
+To reduce latency and improve responsiveness, caching can be applied during querying.
+
+### 1. Can we cache embeddings for repeated queries?
+**Yes.**
+If the same query is asked multiple times, we can store its embedding vector and reuse it instead of recomputing it.
+
+**Benefit:**
+* **Removes embedding computation time.**
+* **Reduces average latency significantly for repeated queries.**
+* **Very low memory overhead.**
+---
+
+### 2. Can we cache Top-K retrieval results?
+**Yes (recommended).**
+We can cache the top-K retrieved chunk IDs and scores for a given query.
+
+**Benefit:**
+* **Skips FAISS + BM25 retrieval step.**
+* **Only reranking (if enabled) needs to run.**
+* **Improves both average latency and P95 latency.**
+
+---
+
+> Caching is a low-risk, high-impact optimization that improves system scalability without affecting retrieval correctness.
