@@ -12,7 +12,7 @@ import argparse
 
 from processing import extract_text_pages_smart, chunk_text, CHUNK_WORDS, CHUNK_OVERLAP_WORDS
 
-EMBED_MODEL_NAME = "BAAI/bge-base-en-v1.5"
+EMBED_MODEL_NAME = "BAAI/bge-large-en-v1.5"
 EMBED_BATCH = 64
 FAISS_INDEX_FILE = "faiss.index"
 METADATA_FILE = "metadata.jsonl"
@@ -20,7 +20,7 @@ EMBEDDINGS_FILE = "embeddings.npy"
 RERANKER_INFO_FILE = "reranker_info.json"
 HNSW_M = 32
 HNSW_EFCONSTRUCTION = 200
-HNSW_EFSEARCH = 128
+HNSW_EFSEARCH = 512
 CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 def ingest_pdfs(pdf_paths: List[str], out_dir: str = "."):

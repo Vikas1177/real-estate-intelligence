@@ -9,8 +9,8 @@ import io
 OCR_WORD_THRESHOLD = 35
 OCR_ZOOM = 3
 USE_BINARIZE = True
-CHUNK_WORDS = 300
-CHUNK_OVERLAP_WORDS = 75
+CHUNK_WORDS = 400
+CHUNK_OVERLAP_WORDS = 80
 
 def pil_from_page(page, zoom: float = OCR_ZOOM):
     mat = fitz.Matrix(zoom, zoom)

@@ -1,102 +1,167 @@
 import requests
 import json
 import math
+import csv
+import statistics
+from typing import List, Dict
 
 API_URL = "http://localhost:8000/search"
 
 TEST_SET = [
-    ("What is Max House, Okhla?", 15),
-    ("When was Max Estates established?", 4),
-    ("In which region does Max Estates have presence across multiple projects?", 10),
-    ("Which project is located on the Noida-Greater Noida Expressway?", 10),
-    ("What percentage of Estate 128 is open space (approx)?", 27),
-    ("What is the UP RERA registration number for Estate 128?", 27),
-    ("How large is 'The Hub' at Estate 128 in sq. ft. (approx)?", 16),
-    ("What LEED certification does Max Towers have?", 11),
-    ("What event facility does Max Towers provide (seating capacity mentioned)?", 11),
-    ("Where is Max Square located?", 19),
-    ("How many villas are at 222 Rajpur?", 23),
-    ("What is the area of 222 Rajpur (in acres)?", 23),
-    ("Who is the artist of 'The Jogger' artwork at Max Square?", 36),
-    ("What is the focus of Max India Foundation (one area)?", 43),
-    ("What three pillars are emphasized under 'Sustainability and E.S.G.'?", 42),
-    ("Which building is IGBC Platinum rated and mentioned for health/well-being?", 11),
-    ("Where is Max House Phase 1 located?", 10),
-    ("What is the development potential of Max Square Two (approx)?", 34),
-    ("In which city is Max Estates' corporate office located (city name)?", 48),
-    ("Which foundation has impacted over 19 million people according to the brochure?", 43),
-    ("What certifications does Max House have (LEED / IGBC level)?", 15),
-    ("Which Max Towers facility seats 374 people?", 11),
-    ("Which Max Estates project is described as having a ~11,000 sq. ft. forest?", 19),
-    ("How much new development does Max Estates commit to add each year (sq. ft.)?", 34),
-    ("Which page/section covers 'Sustainability and E.S.G.'?", 42),
-    ("Who is the artist credited for 'Holderstebolde' (the elevator lobby piece)?", 37),
-    ("Which upcoming market/area did Max Estates enter with a ~7.15-acre parcel?", 34),
-    ("Which project is described in detail on the 'Max Towers' spread?", 11),
-    ("What certification is Max Square listed with (IGBC level)?", 46),
-    ("Which page lists awards such as 'Emerging Developer of the year - ET Real Estate Awards'?", 45),
-    ("Which section explains the role of art at Max Estates?", 35),
-    ("Where is Max Estates' corporate office listed in disclaimers?", 48),
+    ("What is the total super built-up area of Max House, Okhla?", 2),
+    ("How many tenant floors are there in Max House?", 2),
+    ("What is the typical floor plate size at Max House?", 2),
+    ("What is the green rating of Max House?", 2),
+    ("How far is Max House, Okhla from the Okhla NSIC Metro Station?", 3),
+    ("How far is Max House from IGI Airport?", 3),
+    ("Is Max House within walking distance of a metro station?", 3),
+    ("What façade material is used in Max House?", 6),
+    ("What is the floor-to-ceiling height at Max House?", 7),
+    ("Does Max House use double-glazed windows?", 7),
+    ("What air treatment technology is used in Max House?", 10),
+    ("Is Max House LEED certified?", 10),
+    ("Does Max House incorporate biophilic design principles?", 10),
 ]
 
-def evaluate():
-    print(f"Running evaluation on {len(TEST_SET)} queries...\n")
-    
-    top_1_correct = 0
-    top_3_correct = 0
-    all_latencies = []
+K_EVAL = [1, 3]
+SAVE_CSV = "evaluation_results.csv"
+
+
+def recall_at_k(expected_page: int, retrieved_pages: List[int], k: int) -> int:
+    return 1 if expected_page in retrieved_pages[:k] else 0
+
+
+def reciprocal_rank(expected_page: int, retrieved_pages: List[int]) -> float:
+    for i, p in enumerate(retrieved_pages, start=1):
+        if p == expected_page:
+            return 1.0 / i
+    return 0.0
+
+
+def dcg_at_k(relevant_pages: set, retrieved_pages: List[int], k: int) -> float:
+    dcg = 0.0
+    for i, p in enumerate(retrieved_pages[:k], start=1):
+        rel = 1.0 if p in relevant_pages else 0.0
+        if rel > 0.0:
+            dcg += (2 ** rel - 1) / math.log2(i + 1)
+    return dcg
+
+
+def idcg_at_k(relevant_count: int, k: int) -> float:
+    idcg = 0.0
+    rels = min(relevant_count, k)
+    for i in range(1, rels + 1):
+        idcg += (2 ** 1 - 1) / math.log2(i + 1)
+    return idcg
+
+
+def ndcg_at_k(relevant_pages: set, retrieved_pages: List[int], k: int) -> float:
+    idcg = idcg_at_k(len(relevant_pages), k)
+    if idcg == 0:
+        return 0.0
+    return dcg_at_k(relevant_pages, retrieved_pages, k) / idcg
+
+
+def evaluate_query(query: str, expected_page: int, k: int = 3) -> Dict:
+    resp = requests.post(API_URL, json={"query": query, "k": k}, timeout=60)
+    data = resp.json()
+
+    latency_total = data.get("total_ms", None)
+    embed_ms = data.get("embed_ms", None)
+    retrieve_ms = data.get("retrieve_ms", None)
+    rerank_ms = data.get("rerank_ms", None)
+
+    results = data.get("results", [])
+    retrieved_pages = [r.get("page", -1) for r in results]
+
+    rr = reciprocal_rank(expected_page, retrieved_pages)
+    recalls = {f"recall@{kk}": recall_at_k(expected_page, retrieved_pages, kk) for kk in K_EVAL}
+    ndcgs = {f"ndcg@{kk}": ndcg_at_k({expected_page}, retrieved_pages, kk) for kk in K_EVAL}
+    top1 = 1 if (retrieved_pages and retrieved_pages[0] == expected_page) else 0
+    top3 = 1 if expected_page in retrieved_pages[:3] else 0
+
+    return {
+        "query": query,
+        "expected_page": expected_page,
+        "latency_ms": latency_total,
+        "embed_ms": embed_ms,
+        "retrieve_ms": retrieve_ms,
+        "rerank_ms": rerank_ms,
+        "recalls": recalls,
+        "ndcgs": ndcgs,
+        "reciprocal_rank": rr,
+        "top1": top1,
+        "top3": top3,
+        "retrieved_pages": retrieved_pages
+    }
+
+
+def run_evaluation():
+    rows = []
+    latencies = []
+    recall_counts = {f"recall@{k}": 0 for k in K_EVAL}
+    ndcg_sums = {f"ndcg@{k}": 0.0 for k in K_EVAL}
+    top1_count = 0
+    top3_count = 0
+    rr_list = []
 
     for query, expected_page in TEST_SET:
-        try:
-            resp = requests.post(API_URL, json={"query": query, "k": 3})
-            data = resp.json()
-            
-            results = data.get("results", [])
-            latency = data.get("latency_ms", 0)
-            all_latencies.append(latency)
-            
-            print("-" * 50)
-            print(f"QUERY: '{query}'")
-            print(f"EXPECTED PAGE: {expected_page}")
-            print(f"LATENCY: {latency:.2f} ms")
-            print("\nRETRIEVED RESULTS:")
-            
-            found_pages = []
-            for i, res in enumerate(results):
-                rank = i + 1
-                page = res.get("page", "N/A")
-                score = res.get("score", 0.0)
-                text_preview = res.get("text", "")[:120].replace('\n', ' ')
-                
-                found_pages.append(page)
+        res = evaluate_query(query, expected_page, k=3)
+        rows.append(res)
 
-                match_marker = " [CORRECT]" if page == expected_page else ""
-                print(f"  {rank}. [Page {page}] (Score: {score:.4f}){match_marker}")
-                print(f"     Text: {text_preview}...")
+        if res["latency_ms"] is not None:
+            latencies.append(res["latency_ms"])
 
-            if results and results[0].get("page") == expected_page:
-                top_1_correct += 1
+        for k in K_EVAL:
+            recall_counts[f"recall@{k}"] += res["recalls"][f"recall@{k}"]
+            ndcg_sums[f"ndcg@{k}"] += res["ndcgs"][f"ndcg@{k}"]
 
-            if expected_page in found_pages:
-                top_3_correct += 1
+        top1_count += res["top1"]
+        top3_count += res["top3"]
+        rr_list.append(res["reciprocal_rank"])
 
-        except Exception as e:
-            print(f"Error testing query '{query}': {e}")
+    n = len(TEST_SET)
 
-    if len(TEST_SET) > 0:
-        avg_latency = sum(all_latencies) / len(all_latencies) if all_latencies else 0
-        p95_latency = 0
-        if all_latencies:
-            sorted_latencies = sorted(all_latencies)
-            idx = int(math.ceil((len(sorted_latencies) * 95) / 100)) - 1
-            p95_latency = sorted_latencies[max(0, idx)]
+    avg_latency = statistics.mean(latencies) if latencies else None
+    p95_latency = (sorted(latencies)[int(math.ceil(0.95 * len(latencies))) - 1]
+                   if latencies else None)
+    recall_at = {k: (recall_counts[f"recall@{k}"] / n) for k in K_EVAL}
+    ndcg_at = {k: (ndcg_sums[f"ndcg@{k}"] / n) for k in K_EVAL}
+    top1_acc = top1_count / n
+    top3_acc = top3_count / n
+    mrr = statistics.mean(rr_list) if rr_list else 0.0
 
-        print("\n")
-        print("FINAL SUCCESS METRICS")
-        print(f"Average Query Latency: {avg_latency:.2f} ms")
-        print(f"P95 Latency:           {p95_latency:.2f} ms")
-        print(f"Top-1 Accuracy:        {(top_1_correct/len(TEST_SET))*100:.1f}%")
-        print(f"Top-3 Accuracy:        {(top_3_correct/len(TEST_SET))*100:.1f}%")
+    with open(SAVE_CSV, "w", newline='', encoding="utf-8") as csvfile:
+        fieldnames = ["query", "expected_page", "latency_ms", "top1", "top3", "reciprocal_rank",
+                      "retrieved_pages", "recalls", "ndcgs"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({
+                "query": r["query"],
+                "expected_page": r["expected_page"],
+                "latency_ms": r.get("latency_ms"),
+                "top1": r.get("top1"),
+                "top3": r.get("top3"),
+                "reciprocal_rank": r.get("reciprocal_rank"),
+                "retrieved_pages": ";".join([str(p) for p in r.get("retrieved_pages", [])]),
+                "recalls": json.dumps(r.get("recalls", {})),
+                "ndcgs": json.dumps(r.get("ndcgs", {}))
+            })
+
+    print("\nEVALUATION SUMMARY")
+    print(f"Queries evaluated: {n}")
+    print(f"Average latency (ms): {avg_latency:.2f}" if avg_latency is not None else "Average latency (ms): None")
+    print(f"P95 latency (ms): {p95_latency:.2f}" if p95_latency is not None else "P95 latency (ms): None")
+    for k in K_EVAL:
+        print(f"Recall@{k}: {recall_at[k]*100:.2f}%")
+    print(f"Top-1 Accuracy: {top1_acc*100:.2f}%")
+    print(f"Top-3 Accuracy: {top3_acc*100:.2f}%")
+    print(f"MRR: {mrr:.4f}")
+    for k in K_EVAL:
+        print(f"nDCG@{k}: {ndcg_at[k]:.4f}")
+    print(f"Per-query results saved to: {SAVE_CSV}")
+
 
 if __name__ == "__main__":
-    evaluate()
+    run_evaluation()
