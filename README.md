@@ -3,9 +3,52 @@
 This repository provides a high-performance, two-stage semantic search system designed to answer questions from a corpus of real estate documents in PDF format. It uses state-of-the-art embedding and cross-encoder models to deliver accurate results with low latency.
 >**Note on System Design & Scalability:** For a detailed breakdown of our technical decisions, system limits, and bottleneck analysis, please read the #[Architecture & System Design](ARCHITECTURE.md).
 >**Video demo**[DEMO](https://drive.google.com/file/d/15_XwfioKKHdqjkKyz1yMMa2TXko3d6gm/view?usp=sharing)
-![Real-Estate-Intelligence RAG Architecture](http://googleusercontent.com/image_generation_content/4)
 
-    
+```
+graph TD
+    subgraph Data Sources
+        Docs[PDF Documents]
+    end
+
+    subgraph Offline Ingestion Pipeline
+        direction TB
+        Proc(<b>processing.py</b><br/>PyMuPDF Extraction & Tesseract OCR)
+        Chunk(Sentence-Aware Chunking<br/>400 words / 80 overlap)
+        Embed1(<b>index_gen.py</b><br/>Embedding Generation<br/><i>BAAI/bge-large-en-v1.5</i>)
+        
+        Docs --> Proc
+        Proc --> Chunk
+        Chunk --> Embed1
+    end
+
+    subgraph Vector Database
+        DB[(FAISS HNSW Index <br/>+ Metadata.jsonl)]
+        Embed1 -->|Indexes & Saves| DB
+    end
+
+    subgraph Online Retrieval Engine
+        direction TB
+        API(<b>main.py</b><br/>FastAPI Endpoint)
+        Embed2(Query Embedding<br/><i>BAAI/bge-large-en-v1.5</i>)
+        FAISS(FAISS ANN Search<br/>Retrieves Top-80 Candidates)
+        Rerank(Cross-Encoder Reranking<br/><i>ms-marco-MiniLM-L-6-v2</i>)
+        
+        API --> Embed2
+        Embed2 --> FAISS
+        DB -.->|Loaded in RAM| FAISS
+        FAISS -->|Top 80| Rerank
+        Rerank -->|Scores Top 25| Top3[Returns Top 3 Results]
+    end
+
+    subgraph Clients & Evaluation
+        User((User / Frontend))
+        Eval(<b>evaluate.py</b><br/>Test Queries & Metrics)
+        
+        User <-->|JSON Requests / Responses| API
+        Eval -.->|Automated Tests <br/> Recall@K & Latency| API
+    end
+
+ ```   
 ## Features
 
 -   **Intelligent PDF Processing**: Extracts both text and structured tables from PDFs using PyMuPDF.
