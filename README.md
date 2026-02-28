@@ -6,12 +6,14 @@ This repository provides a high-performance, two-stage semantic search system de
 
 ```
 graph TD
+    subgraph Data Sources
+        Docs[PDF Documents]
+    end
 
     subgraph Offline Ingestion Pipeline
-        direction TB
-        Proc(<b>processing.py</b><br/>PyMuPDF Extraction & Tesseract OCR)
-        Chunk(Sentence-Aware Chunking<br/>400 words / 80 overlap)
-        Embed1(<b>index_gen.py</b><br/>Embedding Generation<br/><i>BAAI/bge-large-en-v1.5</i>)
+        Proc[processing.py: Extraction & OCR]
+        Chunk[Sentence-Aware Chunking: 400w / 80o]
+        Embed1[index_gen.py: Embedding BAAI-bge-large]
         
         Docs --> Proc
         Proc --> Chunk
@@ -19,32 +21,31 @@ graph TD
     end
 
     subgraph Vector Database
-        DB[(FAISS HNSW Index <br/>+ Metadata.jsonl)]
+        DB[(FAISS HNSW Index & Metadata)]
         Embed1 -->|Indexes & Saves| DB
     end
 
     subgraph Online Retrieval Engine
-        direction TB
-        API(<b>main.py</b><br/>FastAPI Endpoint)
-        Embed2(Query Embedding<br/><i>BAAI/bge-large-en-v1.5</i>)
-        FAISS(FAISS ANN Search<br/>Retrieves Top-80 Candidates)
-        Rerank(Cross-Encoder Reranking<br/><i>ms-marco-MiniLM-L-6-v2</i>)
+        API[main.py: FastAPI Endpoint]
+        Embed2[Query Embedding]
+        FAISS[FAISS ANN Search: Top 80]
+        Rerank[Cross-Encoder Reranking: Top 25]
+        Top3[Returns Top 3 Results]
         
         API --> Embed2
         Embed2 --> FAISS
         DB -.->|Loaded in RAM| FAISS
         FAISS -->|Top 80| Rerank
-        Rerank -->|Scores Top 25| Top3[Returns Top 3 Results]
+        Rerank -->|Scores Top 25| Top3
     end
 
     subgraph Clients & Evaluation
         User((User / Frontend))
-        Eval(<b>evaluate.py</b><br/>Test Queries & Metrics)
+        Eval[evaluate.py: Test Queries & Metrics]
         
         User <-->|JSON Requests / Responses| API
-        Eval -.->|Automated Tests <br/> Recall@K & Latency| API
+        Eval -.->|Automated Tests| API
     end
-
  ```   
 ## Features
 
