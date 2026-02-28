@@ -6,9 +6,6 @@ This repository provides a high-performance, two-stage semantic search system de
 
 ```
 graph TD
-    subgraph Data Sources
-        Docs[PDF Documents]
-    end
 
     subgraph Offline Ingestion Pipeline
         direction TB
