@@ -143,6 +143,17 @@ The repository includes a script to evaluate the system's performance on a prede
 python evaluate.py
 ```
 
+**Stage-wise Latency Breakdown**
+```
+FOR MAX HOUSE OKHLA [PDF](https://maxestates.in/wp-content/themes/max-estate/html/pdf/max-house-brochure.pdf)
+Total Time:   28.59s
+  - Extraction: 8.02s
+  - Chunking:   0.00s
+  - Metadata:   0.00s
+  - Embedding:  20.56s
+  - Indexing:   0.01s
+```
+
 **FINAL SUCCESS METRICS**
 
 ```
