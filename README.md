@@ -4,49 +4,7 @@ This repository provides a high-performance, two-stage semantic search system de
 >**Note on System Design & Scalability:** For a detailed breakdown of our technical decisions, system limits, and bottleneck analysis, please read the #[Architecture & System Design](ARCHITECTURE.md).
 >**Video demo**[DEMO](https://drive.google.com/file/d/15_XwfioKKHdqjkKyz1yMMa2TXko3d6gm/view?usp=sharing)
 
-```
-graph TD
-    subgraph Data Sources
-        Docs[PDF Documents]
-    end
 
-    subgraph Offline Ingestion Pipeline
-        Proc[processing.py: Extraction & OCR]
-        Chunk[Sentence-Aware Chunking: 400w / 80o]
-        Embed1[index_gen.py: Embedding BAAI-bge-large]
-        
-        Docs --> Proc
-        Proc --> Chunk
-        Chunk --> Embed1
-    end
-
-    subgraph Vector Database
-        DB[(FAISS HNSW Index & Metadata)]
-        Embed1 -->|Indexes & Saves| DB
-    end
-
-    subgraph Online Retrieval Engine
-        API[main.py: FastAPI Endpoint]
-        Embed2[Query Embedding]
-        FAISS[FAISS ANN Search: Top 80]
-        Rerank[Cross-Encoder Reranking: Top 25]
-        Top3[Returns Top 3 Results]
-        
-        API --> Embed2
-        Embed2 --> FAISS
-        DB -.->|Loaded in RAM| FAISS
-        FAISS -->|Top 80| Rerank
-        Rerank -->|Scores Top 25| Top3
-    end
-
-    subgraph Clients & Evaluation
-        User((User / Frontend))
-        Eval[evaluate.py: Test Queries & Metrics]
-        
-        User <-->|JSON Requests / Responses| API
-        Eval -.->|Automated Tests| API
-    end
- ```   
 ## Features
 
 -   **Intelligent PDF Processing**: Extracts both text and structured tables from PDFs using PyMuPDF.
