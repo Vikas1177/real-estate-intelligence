@@ -44,8 +44,9 @@ To build with scalability and latency awareness, it is critical to understand th
     * Adds ~negligible latency but improves exact match recall for numbers and names — high payoff.
 * **Net effect**
     * With above tuning (**K≈80, efSearch≈512, prefilter≈25, GPU reranker**) you can reach high Recall@3 and good Top-1 while keeping average latency in the low hundreds ms. Always measure avg + P95.
+ ---
  
-## Concrete steps taken to improve robustness & reduce hallucinations
+## 4. Concrete steps taken to improve robustness & reduce hallucinations
 
 * **Chunk quality**
     * Sentence-aware chunking with 20–30% overlap; drop tiny chunks; strip repeated headers/footers to avoid noisy high-score boilerplate.
@@ -65,3 +66,4 @@ To build with scalability and latency awareness, it is critical to understand th
     * Automated metrics (Recall@K, MRR, nDCG, hallucination rate) and stage-wise latency (embed / retrieve / rerank / generate) recorded per query. Use P95 latency for SLOs.
 * **Advanced: pre-tokenize chunks**
     * For large rerank budgets, prestore tokenized chunk tensors to avoid tokenization CPU bottleneck at query time.
+---
