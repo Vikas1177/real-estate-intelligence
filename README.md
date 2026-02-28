@@ -94,9 +94,9 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "query": "When was Max Estates established?",
+  "query": "What is the green rating of Max House?",
   "k": 3
-}
+}'
 ```
 
 **Example Response:**
@@ -105,25 +105,30 @@ curl -X 'POST' \
 {
   "results": [
     {
-      "score": 7.587080001831055,
-      "text": "Max Estates Limited is the Real Estate arm of Max Group. Established in 2016, Max Estates aspires to build sustainable, grade A developments in Delhi-NCR, with a focus on well-being. Every day, our en...",
-      "pdf_name": "Max-Estates-Corporate-Brochure.pdf",
-      "page": 4
+      "score": 4.953125,
+      "text": "Open for business; In the heart of New Delhi Originally the headquarters of the $3B Max Group, Max House is located at the epicenter of the Secondary Business District of Delhi. Offering ~105,000 sq. ft. of prime real estate spread across 10 floors, Max House is poised to be the new business address in Delhi NCR. Designed to address the future of work while considering human capital to be an occupier's most important resource, Max House blends thoughtful design and superior hospitality in order to nurture a more productive, healthier and happier community. 3Ma\u0003.I\u0003K\\[ 1,05,425 sq.ft. Super Built Up Area Building Height 40 m Total Number of Floors 1 Basement Parking 1 Stilt Parking 2 Podium Level Parking 8 Tenant Floors Terrace Typical Floor Plate Size 13,000 sq. ft. Green Rating LEED Gold F...",
+      "pdf_name": "max-house-brochure.pdf",
+      "page": 2
     },
     {
-      "score": 6.14046573638916,
-      "text": "ESTABLISH (2018-2021) Formalising our real estate strategy Formalized real estate strategy to one region, multiple asset class focus on Delhi-NCR as a region and Commercial Real Estate as the asset cl...",
-      "pdf_name": "Max-Estates-Corporate-Brochure.pdf",
-      "page": 6
+      "score": -0.806640625,
+      "text": "Sustainability: LEED Gold Certified “Ultimately, we are responsible for building the future we want.” Max House is designed to be LEED Gold certified. Max House is a thought leader in sustainability and aims to minimise its ecological footprint. To do so is important to us because we feel a certain responsibility towards our planet, and we invite you to share our enthusiasm for the same. The LEED Gold certification is a validation of our efforts and helps cement our belief that ecology, biophilia, commerce and real estate can co-exist at a single, iconic address. \u0014\u0013",
+      "pdf_name": "max-house-brochure.pdf",
+      "page": 10
     },
     {
-      "score": 1.840876579284668,
-      "text": "DISCLAIMERS Max Estates Ltd. (CIN no. U70200PB2016PLC040200) is having its Corporate office at Max Towers, L-15, C - 001/A/1, Sector- 16B, Noida, Gautam Buddha Nagar, Noida UP 201301 & Registered offi...",
-      "pdf_name": "Max-Estates-Corporate-Brochure.pdf",
-      "page": 48
+      "score": -1.99609375,
+      "text": "Simply Superior Materials & Construction The materials used to build each space have been carefully chosen to maintain a sense of luxury and balancing it with our high sustainability design standards. From unique glass bricks to terracotta brick tiles, everything at Max House has been hand-picked to ensure a sense of luxury, comfort and longevity. The common areas of Max House are well appointed with: A combination of brick and marble which exude a sense of welcome and warmth Double glazed windows to lower operating costs while allowing light transmission Wooden wall finish & panelling High ceilings with a height of 3.75 meters Efficient floor plates with a clean, efficient rectangular design Plants and nature wherever you look Lobby of Max House \u001a \u0017",
+      "pdf_name": "max-house-brochure.pdf",
+      "page": 7
     }
   ],
-  "latency_ms": 1555.04
+  "total_ms": 182.08,
+  "embed_ms": 92.98,
+  "retrieve_ms": 0.12,
+  "rerank_ms": 88.53,
+  "rerank_token_ms": 10.48,
+  "rerank_forward_ms": 10.32
 }
 ```
 
@@ -143,8 +148,11 @@ python evaluate.py
 ```
 Average Query Latency: 1002.25 ms
 P95 Latency:           1506.51 ms
-Top-1 Accuracy:        84.4%
-Top-3 Accuracy:        90.6%
+Top-1 Accuracy:        84.62%
+Top-3 Accuracy:        92.31%
+MRR: 0.8846
+nDCG@1: 0.8462
+nDCG@3: 0.8947
 ```
 
 ## Docker
